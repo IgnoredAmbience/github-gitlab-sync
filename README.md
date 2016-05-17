@@ -55,6 +55,7 @@ Limitations
 * Force pushes on any repo will break the sync, good motivation to forbid them.
 * All normal build tasks will need to be marked as excluding triggers, ones that need to be triggered need special
   handling, with build variables to select correct mode.
+* `git-sync-remote` should be pre-installed on the build machine at the moment
 
 Notes
 =====

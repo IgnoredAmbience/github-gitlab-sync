@@ -320,7 +320,5 @@ class Sync
 end
 
 s = Sync.new
-#s.run
+s.run
 
-repo = Rugged::Repository.new('repo')
-s.sync_remotes_to_local(repo)
