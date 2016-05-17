@@ -57,8 +57,11 @@ class Sync
       ssh_key = ssh_keygen "#{dir}/key"
 
       # Install public keys for access
-      @github.add_deploy_key source_repo, "GitHub GitLab Sync Public Key", ssh_key[:publickey_text]
+      #   For pushing GitHub -> GitLab (GitLab CI to itself)
       @gitlab_bot.create_ssh_key "GitHub GitLab Sync Public Key (#{dest_repo.path_with_namespace})", ssh_key[:publickey_text]
+
+      #   For pushing GitLab -> GitHub
+      #@github.add_deploy_key source_repo, "GitHub GitLab Sync Public Key", ssh_key[:publickey_text]
 
       # Add the Gitlab Bot user as a developer
       @gitlab.add_team_member(dest_repo.id, @gitlab_bot.user.id, 30)
@@ -80,7 +83,7 @@ class Sync
       clone.checkout "master", :strategy => :force
 
       # Update .gitlab-ci.yml and commit
-      update_gitlab_ci_yaml(repo, '.gitlab-ci.yml')
+      update_gitlab_ci_yaml('.gitlab-ci.yml', source_repo_detail.ssh_url)
       Rugged::Commit.create(repo,
         :message => '[AUTO] .gitlab-ci.yml: Add gitsync task [skip ci]',
         :parents => [repo.head],
@@ -90,7 +93,7 @@ class Sync
 
       # Push
       repo.branches.each {|branch|
-        branch.push(['refs/heads/*:refs/heads/*'], :credentials => creds)
+        branch.push(['refs/heads/*:refs/heads/*','refs/tags/*:refs/tags/*'], :credentials => creds)
       }
 
       ## Final Project configuration
@@ -158,7 +161,7 @@ class Sync
 
   private
 
-  def update_gitlab_ci_yaml(file)
+  def update_gitlab_ci_yaml(file, remote)
     Dir.chdir(repo.path) {
       ci = File.open(file, 'r:bom|utf-8') {|f| YAML.safe_load f, [], [], true, file}
       ci.each {|name, task|
@@ -166,7 +169,10 @@ class Sync
       }
       ci['git-sync'] = {
         'script' => [
-          'echo "Placeholder task for Git syncing"'
+          'eval `ssh agent`',
+          'echo $PUSH_KEY > ssh-add -',
+          "git sync-remote #{remote}",
+          'ssh-agent -k'
         ],
         'only' => ['triggers']
       }
