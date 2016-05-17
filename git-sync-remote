@@ -13,12 +13,13 @@ done
 
 # Add and fetch remotes
 git remote add from $1  2>/dev/null || git remote set-url from $1
-git fetch --multiple --prune from origin
+git remote add to   $2  2>/dev/null || git remote set-url to   $2
+git fetch --multiple --prune from to
 
 # Create locals
 for pushfrom in $(git for-each-ref --format '%(refname)' refs/remotes/from); do
   name="${pushfrom##refs/remotes/from/}"
-  pushto="refs/remotes/origin/$name"
+  pushto="refs/remotes/to/$name"
   if ( ! git show-ref $pushto > /dev/null) || git merge-base --is-ancestor $pushto $pushfrom > /dev/null; then
     git branch -f $name $pushfrom
   else
@@ -29,6 +30,6 @@ for pushfrom in $(git for-each-ref --format '%(refname)' refs/remotes/from); do
 done
 
 # Push to remotes
-git push --tags --follow-tags origin refs/heads/*:refs/heads/*
+git push --tags --follow-tags to refs/heads/*:refs/heads/*
 
 exit $errors

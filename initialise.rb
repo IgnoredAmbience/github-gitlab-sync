@@ -52,16 +52,16 @@ class Sync
     source_repo_detail = @github.repo source_repo
     dest_repo   = @gitlab.project prompt("username/name of GitLab repo to sync to:").gsub("/", "%2F")
 
+    puts dest_repo.inspect
+    exit
+
     Dir.mktmpdir("git-sync-") {|dir|
       ## Project configuration
       ssh_key = ssh_keygen "#{dir}/key"
 
-      # Install public keys for access
-      #   For pushing GitHub -> GitLab (GitLab CI to itself)
+      # Install public keys for r/w access
       @gitlab_bot.create_ssh_key "GitHub GitLab Sync Public Key (#{dest_repo.path_with_namespace})", ssh_key[:publickey_text]
-
-      #   For pushing GitLab -> GitHub
-      #@github.add_deploy_key source_repo, "GitHub GitLab Sync Public Key", ssh_key[:publickey_text]
+      @github.add_deploy_key source_repo, "GitHub GitLab Sync Public Key", ssh_key[:publickey_text]
 
       # Add the Gitlab Bot user as a developer
       @gitlab.add_team_member(dest_repo.id, @gitlab_bot.user.id, 30)
@@ -77,24 +77,17 @@ class Sync
       remote.fetch(:credentials => creds)
 
       # Sync
-      sync_remotes_to_local clone
+      local_branches = sync_remotes_to_local clone
 
       # Checkout master
       clone.checkout "master", :strategy => :force
 
       # Update .gitlab-ci.yml and commit
-      update_gitlab_ci_yaml('.gitlab-ci.yml', source_repo_detail.ssh_url)
-      Rugged::Commit.create(repo,
-        :message => '[AUTO] .gitlab-ci.yml: Add gitsync task [skip ci]',
-        :parents => [repo.head],
-        :tree => repo.index.write_tree,
-        :update_ref => 'HEAD'
-      )
+      update_gitlab_ci_yaml(clone, '.gitlab-ci.yml', source_repo_detail.ssh_url, dest_repo.ssh_url_to_repo)
 
       # Push
-      repo.branches.each {|branch|
-        branch.push(['refs/heads/*:refs/heads/*','refs/tags/*:refs/tags/*'], :credentials => creds)
-      }
+      locals = local_branches.keys.map {|name| "refs/heads/#{name}"}
+      clone.remotes.each {|r| r.push(locals, :credentials => creds)}
 
       ## Final Project configuration
       # Enable builds on Gitlab repo, select a runner
@@ -105,16 +98,16 @@ class Sync
       end
 
       # Install private key to a secret build variable on gitlab repo
-      @gitlab.create_variable(dest_repo.id, "PUSH_KEY", ssh_key[:privatekey_text])
+      @gitlab.update_variable(dest_repo.id, "PUSH_KEY", ssh_key[:privatekey_text])
 
       # Create a trigger on GitLab
       trigger = @gitlab.create_trigger(dest_repo.id)
       trigger_uri = URI(@gitlab.endpoint)
-      trigger_uri.path = "/projects/#{dest_repo.id}/trigger/builds"
+      trigger_uri.path = trigger_uri.path + "/projects/#{dest_repo.id}/trigger/builds"
       trigger_uri.query = URI.encode_www_form(token: trigger.token, ref: 'master', 'variables[trigger_source]': 'github' )
 
       # Install a webhook on GitHub to trigger GitLab
-      @github.create_hook(source_repo_detail, 'web',
+      @github.create_hook(source_repo, 'web',
                           { :url => trigger_uri, :content_type => 'form', :secret => 'gitlabsync' },
                           { :events => ['push'], :active => true })
     }
@@ -157,21 +150,23 @@ class Sync
         end
       end
     }
+    local_branches
   end
 
   private
 
-  def update_gitlab_ci_yaml(file, remote)
-    Dir.chdir(repo.path) {
+  def update_gitlab_ci_yaml(repo, file, remote_from, remote_to)
+    Dir.chdir(repo.workdir) {
       ci = File.open(file, 'r:bom|utf-8') {|f| YAML.safe_load f, [], [], true, file}
       ci.each {|name, task|
-        task['exclude'] = ['triggers'] + (task['exclude'] || [])
+        task['except'] = ['triggers'] + (task['exclude'] || [])
       }
       ci['git-sync'] = {
         'script' => [
-          'eval `ssh agent`',
-          'echo $PUSH_KEY > ssh-add -',
-          "git sync-remote #{remote}",
+          'eval `ssh-agent`',
+          'echo "$PUSH_KEY" | ssh-add -',
+          'git-add -l',
+          "git sync-remote #{remote_from} #{remote_to}",
           'ssh-agent -k'
         ],
         'only' => ['triggers']
@@ -181,10 +176,11 @@ class Sync
       }
 
       if prompt_bool "Do you want to edit the modified #{file}?"
-        `git add -e #{file}`
+        `git add -e #{file} > /dev/tty < /dev/tty`
       else
         `git add #{file}`
       end
+      `git commit -m ".gitlab-ci.yml: Install git-sync webhook task [AUTO][ci skip]"`
     }
   end
 
