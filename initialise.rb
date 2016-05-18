@@ -170,7 +170,6 @@ class Sync
         'script' => [
           'eval `ssh-agent`',
           'echo "$PUSH_KEY" | ssh-add -',
-          'git-add -l',
           "git sync-remote #{remote_from} #{remote_to}",
           'ssh-agent -k'
         ],

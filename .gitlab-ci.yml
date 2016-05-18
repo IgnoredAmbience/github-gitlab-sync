@@ -3,7 +3,6 @@ git-sync:
   script:
   - eval `ssh-agent`
   - echo "$PUSH_KEY" | ssh-add -
-  - git-add -l
   - git sync-remote git@github.com:edgemaster/github-gitlab-sync.git git@gitlab.doc.ic.ac.uk:tw1509/github-gitlab-sync.git
   - ssh-agent -k
   only:
