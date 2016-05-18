@@ -52,9 +52,6 @@ class Sync
     source_repo_detail = @github.repo source_repo
     dest_repo   = @gitlab.project prompt("username/name of GitLab repo to sync to:").gsub("/", "%2F")
 
-    puts dest_repo.inspect
-    exit
-
     Dir.mktmpdir("git-sync-") {|dir|
       ## Project configuration
       ssh_key = ssh_keygen "#{dir}/key"
