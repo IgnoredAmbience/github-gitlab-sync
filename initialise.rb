@@ -96,8 +96,8 @@ class Sync
 
       # Install private key to a secret build variable on gitlab repo
       begin
-        @gitlab.update_variable(dest_repo.id, "PUSH_KEY", ssh_key[:privatekey_text])
-      rescue Gitlab::Error::NotFound
+        @gitlab.create_variable(dest_repo.id, "PUSH_KEY", ssh_key[:privatekey_text])
+      rescue Gitlab::Error::BadRequest
         @gitlab.update_variable(dest_repo.id, "PUSH_KEY", ssh_key[:privatekey_text])
       end
 
