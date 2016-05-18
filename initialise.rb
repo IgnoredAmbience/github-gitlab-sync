@@ -162,7 +162,12 @@ class Sync
         ci = File.open(file, 'r:bom|utf-8') {|f| YAML.safe_load f, [], [], true, file}
       rescue
         ci = {}
+
+        # Create the file and add to the index so we may use `git add -e`
+        File.write(file, '')
+        `git add -N #{file}`
       end
+
       ci.each {|name, task|
         task['except'] = ['triggers'] + (task['exclude'] || [])
       }
@@ -175,9 +180,8 @@ class Sync
         ],
         'only' => ['triggers']
       }
-      File.open(file, 'w') {|f|
-        f.write(YAML.dump(ci))
-      }
+
+      File.write(file, YAML.dump(ci))
 
       if prompt_bool "Do you want to edit the modified #{file}?"
         `git add -e #{file} > /dev/tty < /dev/tty`
