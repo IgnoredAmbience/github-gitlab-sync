@@ -50,7 +50,7 @@ class Sync
 
     source_repo = Octokit::Repository.new(prompt "username/name of GitHub repo to sync from:")
     source_repo_detail = @github.repo source_repo
-    dest_repo   = @gitlab.project prompt("username/name of GitLab repo to sync to:").gsub("/", "%2F")
+    dest_repo   = @gitlab.project prompt("username/name of GitLab repo to sync to:", source_repo.slug).gsub("/", "%2F")
 
     Dir.mktmpdir("git-sync-") {|dir|
       ## Project configuration
@@ -288,9 +288,15 @@ class Sync
       :privatekey => file, :privatekey_text => privkey_text }
   end
 
-  def prompt(message="Input:")
-    puts message
-    gets.strip
+  def prompt(message="Input:", default=nil)
+    defaults = if default.nil? then "" else " [#{default}]" end
+    puts message + defaults
+    result = gets.strip
+    if result.empty?
+      default
+    else
+      result
+    end
   end
 
   def prompt_password(message="Password:")
