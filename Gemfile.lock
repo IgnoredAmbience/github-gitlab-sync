@@ -1,0 +1,49 @@
+GIT
+  remote: git://github.com/edgemaster/gitlab.git
+  revision: 87fd61872acc5d5990aba3387e7b2cd2aebdc276
+  ref: master
+  specs:
+    gitlab (3.6.1)
+      httparty
+      terminal-table
+
+GEM
+  remote: https://rubygems.org/
+  specs:
+    addressable (2.4.0)
+    coderay (1.1.1)
+    faraday (0.9.2)
+      multipart-post (>= 1.2, < 3)
+    httparty (0.13.7)
+      json (~> 1.8)
+      multi_xml (>= 0.5.2)
+    json (1.8.3)
+    method_source (0.8.2)
+    multi_xml (0.5.5)
+    multipart-post (2.0.0)
+    netrc (0.11.0)
+    octokit (4.3.0)
+      sawyer (~> 0.7.0, >= 0.5.3)
+    pry (0.10.3)
+      coderay (~> 1.1.0)
+      method_source (~> 0.8.1)
+      slop (~> 3.4)
+    rugged (0.24.0)
+    sawyer (0.7.0)
+      addressable (>= 2.3.5, < 2.5)
+      faraday (~> 0.8, < 0.10)
+    slop (3.6.0)
+    terminal-table (1.5.2)
+
+PLATFORMS
+  ruby
+
+DEPENDENCIES
+  gitlab!
+  netrc (~> 0.11)
+  octokit (~> 4.0)
+  pry
+  rugged
+
+BUNDLED WITH
+   1.12.4
