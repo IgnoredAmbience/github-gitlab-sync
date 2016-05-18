@@ -95,7 +95,11 @@ class Sync
       end
 
       # Install private key to a secret build variable on gitlab repo
-      @gitlab.update_variable(dest_repo.id, "PUSH_KEY", ssh_key[:privatekey_text])
+      begin
+        @gitlab.update_variable(dest_repo.id, "PUSH_KEY", ssh_key[:privatekey_text])
+      rescue Gitlab::Error::NotFound
+        @gitlab.update_variable(dest_repo.id, "PUSH_KEY", ssh_key[:privatekey_text])
+      end
 
       # Create a trigger on GitLab
       trigger = @gitlab.create_trigger(dest_repo.id)
@@ -154,7 +158,11 @@ class Sync
 
   def update_gitlab_ci_yaml(repo, file, remote_from, remote_to)
     Dir.chdir(repo.workdir) {
-      ci = File.open(file, 'r:bom|utf-8') {|f| YAML.safe_load f, [], [], true, file}
+      begin
+        ci = File.open(file, 'r:bom|utf-8') {|f| YAML.safe_load f, [], [], true, file}
+      rescue
+        ci = {}
+      end
       ci.each {|name, task|
         task['except'] = ['triggers'] + (task['exclude'] || [])
       }
