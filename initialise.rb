@@ -169,8 +169,11 @@ class Sync
       end
 
       ci.each {|name, task|
-        task['except'] = ['triggers'] + (task['exclude'] || [])
+        unless %w[image services stages types before_script after_script variables cache].include? name
+          task['except'] = ['triggers'] + (task['except'] || [])
+        end
       }
+
       ci['git-sync'] = {
         'before_script' => [
           'eval `ssh-agent`',
@@ -178,9 +181,7 @@ class Sync
         ],
         'script' => [
           "git sync-remote #{remote_from} #{remote_to}",
-        ],
-        'after_script' => [
-          'ssh-agent -k'
+          'ssh-agent -k' # For some reason this doesn't work in after_script
         ],
         'only' => ['triggers']
       }
