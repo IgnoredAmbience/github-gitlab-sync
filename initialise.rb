@@ -172,10 +172,14 @@ class Sync
         task['except'] = ['triggers'] + (task['exclude'] || [])
       }
       ci['git-sync'] = {
-        'script' => [
+        'before_script' => [
           'eval `ssh-agent`',
-          'echo "$PUSH_KEY" | ssh-add -',
+          'echo "$PUSH_KEY" | ssh-add -'
+        ],
+        'script' => [
           "git sync-remote #{remote_from} #{remote_to}",
+        ],
+        'after_script' => [
           'ssh-agent -k'
         ],
         'only' => ['triggers']
