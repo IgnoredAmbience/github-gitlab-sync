@@ -174,6 +174,9 @@ class Sync
         end
       }
 
+      # Add Git Sync Stage to existing list of stages, or the default set.
+      ci['stages'] = ['Git Sync'] + (ci['stages'] || ['build', 'test', 'deploy'])
+
       ci['git-sync'] = {
         'before_script' => [
           'eval `ssh-agent`',
@@ -183,7 +186,8 @@ class Sync
           "git sync-remote #{remote_from} #{remote_to}",
           'ssh-agent -k' # For some reason this doesn't work in after_script
         ],
-        'only' => ['triggers']
+        'only' => ['triggers'],
+        'stage' => 'Git Sync'
       }
 
       File.write(file, YAML.dump(ci))
