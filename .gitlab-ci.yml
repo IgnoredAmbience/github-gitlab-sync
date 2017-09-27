@@ -1,9 +1,13 @@
 ---
+stages:
+- Git Sync
+
 git-sync:
   script:
   - eval `ssh-agent`
   - echo "$PUSH_KEY" | ssh-add -
   - git sync-remote git@github.com:edgemaster/github-gitlab-sync.git git@gitlab.doc.ic.ac.uk:tw1509/github-gitlab-sync.git
+  stage: Git Sync
   image: ignoredambience/github-gitlab-sync
   tags:
   - docker

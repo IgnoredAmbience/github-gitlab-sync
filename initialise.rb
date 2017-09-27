@@ -184,8 +184,9 @@ class Sync
         ],
         'script' => [
           "git sync-remote #{remote_from} #{remote_to}",
-          'ssh-agent -k' # For some reason this doesn't work in after_script
         ],
+        'image' => 'ignoredambience/github-gitlab-sync',
+        'tags' => ['docker'],
         'only' => ['triggers'],
         'stage' => 'Git Sync'
       }
