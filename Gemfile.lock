@@ -1,5 +1,5 @@
 GIT
-  remote: git://github.com/edgemaster/gitlab.git
+  remote: https://github.com/edgemaster/gitlab.git
   revision: 87fd61872acc5d5990aba3387e7b2cd2aebdc276
   ref: master
   specs:
@@ -15,9 +15,11 @@ GEM
     coderay (1.1.2)
     faraday (0.13.1)
       multipart-post (>= 1.2, < 3)
-    httparty (0.15.6)
+    httparty (0.21.0)
+      mini_mime (>= 1.0.0)
       multi_xml (>= 0.5.2)
     method_source (0.9.0)
+    mini_mime (1.1.2)
     multi_xml (0.6.0)
     multipart-post (2.0.0)
     netrc (0.11.0)
@@ -31,9 +33,9 @@ GEM
     sawyer (0.8.1)
       addressable (>= 2.3.5, < 2.6)
       faraday (~> 0.8, < 1.0)
-    terminal-table (1.8.0)
-      unicode-display_width (~> 1.1, >= 1.1.1)
-    unicode-display_width (1.3.0)
+    terminal-table (3.0.2)
+      unicode-display_width (>= 1.1.1, < 3)
+    unicode-display_width (2.4.0)
 
 PLATFORMS
   ruby
